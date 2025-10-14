@@ -1,96 +1,6 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
-const { Database } = require('./src/db');
-const { Scheduler } = require('./src/scheduler');
-
-let mainWindow;
-let db;
-let scheduler;
-
-function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1100,
-    height: 720,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-    }
-  });
-
-  mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
-
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
-}
-
-app.whenReady().then(async () => {
-  try {
-    db = await Database.create(path.join(app.getPath('userData'), 'zeem.sqlite'));
-    scheduler = new Scheduler(db, joinZoom, leaveZoom, (evt) => {
-      if (mainWindow) {
-        mainWindow.webContents.send('scheduler:event', evt);
-      }
-    }, isZoomRunning);
-    createWindow();
-    setupIPC();
-  } catch (e) {
-    console.error('Failed to init app', e);
-    dialog.showErrorBox('Initialization Error', String(e && e.stack || e));
-    app.quit();
-  }
-});
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-app.on('activate', () => {
-  if (mainWindow === null) createWindow();
-});
-
-function setupIPC() {
-  ipcMain.handle('meetings:list', async () => {
-    return db.listMeetings();
-  });
-
-  ipcMain.handle('meetings:create', async (_e, item) => {
-    const created = db.createMeeting(item);
-    scheduler.refresh();
-    return created;
-  });
-
-  ipcMain.handle('meetings:update', async (_e, item) => {
-    const updated = db.updateMeeting(item);
-    scheduler.refresh();
-    return updated;
-  });
-
-  ipcMain.handle('meetings:delete', async (_e, id) => {
-    db.deleteMeeting(id);
-    scheduler.refresh();
-    return { ok: true };
-  });
-
-  ipcMain.handle('meetings:toggle', async (_e, id, enabled) => {
-    db.setEnabled(id, enabled);
-    scheduler.refresh();
-    return { ok: true };
-  });
-
-  ipcMain.handle('zoom:join', async (_e, url) => {
-    return joinZoom(url);
-  });
-
-  ipcMain.handle('zoom:leave', async () => {
-    return leaveZoom();
-  });
-}
 
 let zoomProcess = null;
 
@@ -107,7 +17,6 @@ function joinZoom(url) {
       if (!zoomPath) {
         const msg = `Zoom executable not found in candidates: ${candidates.join(' | ')}`;
         console.error('[joinZoom] ERROR', msg);
-        if (mainWindow) mainWindow.webContents.send('scheduler:event', { type: 'join-error', error: msg });
         return reject(new Error(msg));
       }
 
@@ -126,7 +35,6 @@ function joinZoom(url) {
       child.on('exit', (code, signal) => {
         console.log('[joinZoom] child exited', { code, signal });
       });
-      // Do not wait for exit; Zoom stays open
     } catch (err) {
       console.error('[joinZoom] exception', err);
       reject(err);
@@ -168,8 +76,6 @@ function isZoomRunning() {
           return resolve(false);
         }
         const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-        console.log('lines:',lines)
-        // In CSV mode, a process line starts with "Zoom.exe",...
         const zoomLines = lines.filter(l => /^"?Zoom\.exe"?,/i.test(l) || l.toLowerCase().startsWith('zoom.exe'));
         const running = zoomLines.length > 0;
         console.log('[isZoomRunning] lines:', lines.length, 'zoomLines:', zoomLines.length, 'running:', running);
@@ -184,3 +90,5 @@ function isZoomRunning() {
     }
   });
 }
+
+module.exports = { joinZoom, leaveZoom, isZoomRunning };
