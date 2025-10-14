@@ -1,0 +1,29 @@
+{
+  "name": "zeem",
+  "version": "0.1.0",
+  "description": "Electron app to auto-join/leave Zoom meetings on schedule",
+  "main": "main.js",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.cjs -i ./renderer/src/index.css -o ./renderer/dist/styles.css",
+    "build:js": "esbuild renderer/src/main.jsx --bundle --outfile=renderer/dist/bundle.js --format=esm --sourcemap",
+    "build": "npm run build:css && npm run build:js",
+    "start": "npm run build && electron .",
+    "dev": "npm run build && electron .",
+    "prepare": "",
+    "test": "echo No tests yet"
+  },
+  "dependencies": {
+    "sql.js": "^1.9.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.19",
+    "electron": "^30.0.0",
+    "esbuild": "^0.21.5",
+    "postcss": "^8.4.38",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^3.4.18"
+  }
+}
