@@ -61,5 +61,19 @@ dist/
 - If Zoom does not launch, verify the executable path and that the URL is correct.
 - If the app doesn't show any meetings, add one with the + Add Meeting button.
 
+## Auto-updates
+- Uses electron-builder + electron-updater to check GitHub Releases and auto-install updates on Windows.
+- On app start, Zeem checks for updates and downloads them automatically; once downloaded, the app restarts to apply the update.
+- Publishing is configured to the `zelkim/zeem` GitHub repo in `package.json > build.publish`.
+
+Publishing updates
+1. Bump the version in `package.json`.
+2. Build distributables: `npm run dist`.
+3. Upload the generated installer and `latest.yml` to a GitHub Release with the same version tag. Alternatively, set `GH_TOKEN` and electron-builder will upload automatically.
+
+Notes
+- Auto-update is disabled in development.
+- For NSIS updates on Windows, ensure both the `.exe` and `latest.yml` are attached to the release.
+
 ## License
 MIT

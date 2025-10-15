@@ -1,11 +1,18 @@
 const fs = require('fs');
 const path = require('path');
-const initSqlJs = require('sql.js/dist/sql-wasm.js');
+const initSqlJs = require('sql.js');
 
 class Database {
   static async create(filePath) {
     const SQL = await initSqlJs({
-      locateFile: (file) => path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', file)
+      locateFile: (file) => {
+        const devPath = path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', file);
+        const prodPath = path.join(process.resourcesPath || process.cwd(), 'app.asar.unpacked', 'node_modules', 'sql.js', 'dist', file);
+        try {
+          if (fs.existsSync(prodPath)) return prodPath;
+        } catch {}
+        return devPath;
+      }
     });
     let db;
     if (fs.existsSync(filePath)) {

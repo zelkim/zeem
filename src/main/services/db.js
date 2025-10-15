@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const initSqlJs = require('sql.js/dist/sql-wasm.js');
+const initSqlJs = require('sql.js');
 
 class Database {
   static async create(filePath) {

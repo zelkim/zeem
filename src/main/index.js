@@ -6,6 +6,7 @@ const { joinZoom, leaveZoom, isZoomRunning } = require('./services/zoom');
 const { createMainWindow } = require('./windows/mainWindow');
 const { registerMeetingsIpc } = require('./ipc/meetings.ipc');
 const { registerZoomIpc } = require('./ipc/zoom.ipc');
+const { checkForUpdates } = require('./services/updater');
 
 let mainWindow;
 let db;
@@ -27,6 +28,9 @@ app.whenReady().then(async () => {
 
     registerMeetingsIpc(db, scheduler);
     registerZoomIpc({ joinZoom, leaveZoom });
+
+    // Trigger auto-update check (skips in dev)
+    checkForUpdates(mainWindow);
   } catch (e) {
     console.error('Failed to init app', e);
     dialog.showErrorBox('Initialization Error', String(e && e.stack || e));
