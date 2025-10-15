@@ -1,4 +1,7 @@
+<img width="150" height="150" alt="Z" src="https://github.com/user-attachments/assets/e97a2604-619c-4545-8dcd-bfc20f9a4b23" />
+
 # Zeem
+<img src='https://img.shields.io/badge/DLSU-ORGLIFE-100000?style=for-the-badge&logoColor=white&labelColor=00703C&color=333333'/>  <img alt='' src='https://img.shields.io/badge/DLSU-CCS-100000?style=for-the-badge&logo=&logoColor=white&labelColor=00703C&color=333333'/>  <img alt='' src='https://img.shields.io/badge/LSCS-r&d-100000?style=for-the-badge&logo=&logoColor=white&labelColor=01087D&color=001DCB'/>
 
 Zeem automatically joins and leaves your Zoom meetings on a weekly schedule. Set it once—no more rushing to links.
 
