@@ -1,79 +1,169 @@
 # Zeem
 
-Electron app that automatically joins/leaves Zoom meetings on a schedule.
+Zeem automatically joins and leaves your Zoom meetings on a weekly schedule. Set it once—no more rushing to links.
 
-## Features
-- Add/edit/delete meetings with title, URL, start and end times
-- Toggle auto-join per meeting
-- Auto-join ~3 minutes before start via Zoom command line
-- Auto-leave at end by killing Zoom process
-- Sidebar showing ongoing or next meeting and a minimal upcoming list
+## Quick start (for everyone)
 
-## Requirements
-- Windows with Zoom installed (e.g. `%APPDATA%/Zoom/bin/Zoom.exe`, or under `C:/Program Files`)
+1) Install
+- Run the installer you downloaded (Zeem-0.1.0-Setup.exe) and follow the prompts.
+
+2) Add your meetings
+- Click “+ Add Meeting”
+- Paste your Zoom link, choose the weekday, and set the start and end times
+- Save. Repeat for other meetings
+
+3) Enable the meetings you want
+- Toggle any meeting on/off without deleting it
+
+4) Let Zeem handle it
+- Leave the app running. Zeem will:
+   - Join shortly before your meeting starts
+   - Open Zoom if it isn’t already running
+   - Leave when the meeting’s end time is reached
+
+Tips
+- Use the “Join Meeting” button in the sidebar to join immediately
+- You can keep meetings in your list and disable them temporarily
+- Times follow your system clock (12/24‑hour based on your Windows settings)
+
+Troubleshooting
+- Zoom didn’t open or join: check the link and try joining manually once, then reopen Zeem
+- Didn’t auto‑leave: verify the meeting’s end time
+- Blank window: quit and open Zeem again; if it persists, reinstall from the latest installer
+
+Privacy
+- Your meetings are stored locally on your computer. Zeem doesn’t upload your data.
+
+---
+
+## Technical guide (for developers)
+
+Zeem is an Electron + React app. The main process schedules meetings and controls Zoom. The renderer shows your schedule and status.
+
+### Requirements
+- Windows with Zoom installed (typically `%APPDATA%/Zoom/bin/Zoom.exe` or `C:/Program Files/Zoom/bin/Zoom.exe`)
 - Node.js 18+
 
-## Project layout
+### Scripts
+- Start (build then run):
+   ```cmd
+   npm start
+   ```
+- Build production assets only:
+   ```cmd
+   npm run build
+   ```
+- Package Windows installer (NSIS):
+   ```cmd
+   npm run package
+   ```
+
+### Build pipeline
+- Tailwind builds CSS to `dist/renderer/styles.css`
+- Renderer (React) is bundled by esbuild to `dist/renderer/bundle.js` (ESM)
+- `scripts/prepareRendererHtml.js` writes `dist/renderer/index.html` from `src/renderer/index.html` with corrected asset paths
+- Preload is bundled to `dist/preload/index.js` (esbuild, external: electron)
+- Main is bundled to `dist/main.js` (esbuild, external: electron)
+- Packaging is handled by electron-builder (NSIS target) with asar enabled and `sql.js` WASM unpacked via `asarUnpack`/`extraResources`
+
+### Project layout
 
 ```
 src/
-   main/                # Electron main process (Node APIs)
-      index.js           # app entry
+   main/                  # Electron main process (Node APIs)
+      index.js             # app entry; creates DB, window, scheduler, updater
       windows/
-         mainWindow.js    # BrowserWindow creation
+         mainWindow.js      # BrowserWindow creation; loads dist/renderer/index.html
       ipc/
-         meetings.ipc.js  # IPC handlers for meetings CRUD
-         zoom.ipc.js      # IPC handlers for join/leave
+         meetings.ipc.js    # IPC for meetings CRUD and toggles
+         zoom.ipc.js        # IPC for join/leave requests
       services/
-         db.js            # sql.js persistence
-         scheduler.js     # meeting scheduler
-         zoom.js          # join/leave/status helpers
+         db.js              # sql.js persistence (local DB under userData)
+         scheduler.js       # 15s tick; auto-join/-leave; status snapshots
+         zoom.js            # Zoom launch/join/leave helpers
+         updater.js         # electron-updater wiring (skips in dev)
 
-   preload/             # contextBridge only
-      index.js
+   preload/               # Safe bridge (contextIsolation)
+      index.js             # Exposes zeem API to renderer via contextBridge
 
-   renderer/            # React UI (no Node APIs)
-      index.html
+   renderer/              # React UI (no Node APIs)
+      index.html           # Source HTML (transformed to dist/renderer/index.html)
       src/
-         main.jsx
-         app.jsx
-         index.css
+         main.jsx           # React bootstrap
+         app.jsx            # Main app; status + meeting list
+         index.css          # Tailwind entry
          components/
             Sidebar.jsx
             MeetingsList.jsx
+            EditModal.jsx
+            ConfirmModal.jsx
+         utils/
+            utils.js
 
 dist/
-   renderer/            # built CSS/JS artifacts
+   main.js                # bundled main
+   preload/index.js       # bundled preload
+   renderer/
+      index.html           # prepared HTML
+      styles.css           # Tailwind output
+      bundle.js            # bundled renderer
 ```
 
-## Getting started
-1. Install dependencies
-    - npm install
-2. Run
-    - npm start
+### Runtime behavior
+- Scheduler checks every 15 seconds and maintains a snapshot `{ ongoing, next }`
+- Auto‑join triggers a few minutes before start; ensures Zoom is running
+- Auto‑leave at the scheduled end time
+- Renderer subscribes to scheduler events to update the UI
 
-## Notes
-- Data is stored in an SQLite database file under your Electron `userData` folder (SQL.js-backed). No external service required.
-- If your Windows username differs from "User" or Zoom is installed elsewhere, the app searches several common install paths; adjust `src/main/services/zoom.js` if needed.
-- Time inputs are local time; they are stored as ISO strings and compared in the app.
+### Packaging and updates
+- `electron-builder` config is in `package.json > build`
+   - `asar: true`, `asarUnpack` and `extraResources` for `sql.js` WASM
+   - Windows target: `nsis`, artifact named `${productName}-${version}-Setup.${ext}` into `release/`
+   - Publish is configured for GitHub Releases under `zelkim/zeem`
+- Auto‑update via `electron-updater` runs on startup (skips in development)
 
-## Troubleshooting
-- If Zoom does not launch, verify the executable path and that the URL is correct.
-- If the app doesn't show any meetings, add one with the + Add Meeting button.
+### Data storage
+- Local database file (sql.js) lives under the Electron `userData` directory (e.g., `%APPDATA%/Zeem/zeem.sqlite`)
 
-## Auto-updates
-- Uses electron-builder + electron-updater to check GitHub Releases and auto-install updates on Windows.
-- On app start, Zeem checks for updates and downloads them automatically; once downloaded, the app restarts to apply the update.
-- Publishing is configured to the `zelkim/zeem` GitHub repo in `package.json > build.publish`.
+### Development notes
+- The dev `npm start` builds assets before launching Electron to avoid missing files
+- You may see Chromium cache warnings on Windows during development; they’re benign
+- Keep `contextIsolation: true` and avoid Node APIs in the renderer
 
-Publishing updates
-1. Bump the version in `package.json`.
-2. Build distributables: `npm run dist`.
-3. Upload the generated installer and `latest.yml` to a GitHub Release with the same version tag. Alternatively, set `GH_TOKEN` and electron-builder will upload automatically.
+---
 
-Notes
-- Auto-update is disabled in development.
-- For NSIS updates on Windows, ensure both the `.exe` and `latest.yml` are attached to the release.
+## Contributing
+
+Thanks for your interest! PRs and issues are welcome.
+
+1) Set up dev
+```cmd
+git clone https://github.com/zelkim/zeem.git
+cd zeem
+npm install
+npm start
+```
+
+2) Make changes
+- Keep code style consistent with the existing files
+- Add small, focused commits with clear messages
+- If you change public behavior, update README and add notes in RELEASE-NOTES.md
+
+3) Test locally
+- Ensure `npm start` runs and the UI functions (add a meeting, join/leave)
+- Build/package if your changes affect production build:
+```cmd
+npm run build
+npm run package
+```
+
+4) Open a PR
+- Describe the change, motivation, and testing steps
+- Link any related issues
+
+### Reporting issues
+- Include your OS version, Zeem version, and steps to reproduce
+- Attach logs or screenshots where possible
 
 ## License
 MIT
