@@ -4,35 +4,36 @@ Zeem automatically joins and leaves your Zoom meetings on a weekly schedule. Set
 
 ## Quick start (for everyone)
 
-1) Install
+### 1) Install
 - Run the installer you downloaded (Zeem-0.1.0-Setup.exe) and follow the prompts.
 
-2) Add your meetings
+### 2) Add your meetings
 - Click “+ Add Meeting”
 - Paste your Zoom link, choose the weekday, and set the start and end times
 - Save. Repeat for other meetings
 
-3) Enable the meetings you want
+### 3) Enable the meetings you want
 - Toggle any meeting on/off without deleting it
 
-4) Let Zeem handle it
+### 4) Let Zeem handle it
 - Leave the app running. Zeem will:
    - Join shortly before your meeting starts
    - Open Zoom if it isn’t already running
    - Leave when the meeting’s end time is reached
 
-Tips
+### Tips
 - Use the “Join Meeting” button in the sidebar to join immediately
 - You can keep meetings in your list and disable them temporarily
 - Times follow your system clock (12/24‑hour based on your Windows settings)
 
-Troubleshooting
+### Troubleshooting
 - Zoom didn’t open or join: check the link and try joining manually once, then reopen Zeem
 - Didn’t auto‑leave: verify the meeting’s end time
 - Blank window: quit and open Zeem again; if it persists, reinstall from the latest installer
 
-Privacy
+### Privacy
 - Your meetings are stored locally on your computer. Zeem doesn’t upload your data.
+- Zeem has no login, **all user interactions are anonymous**.
 
 ---
 
