@@ -66,53 +66,61 @@ export default function Sidebar({ meetings, ongoing, next, onJoin, onLeave }) {
   const primary = ongoing || next || (miniItems.length > 0 ? miniItems[0] : null);
 
   return (
-    <aside className="w-80 border-r border-white/10 p-4 overflow-auto">
-      <div className="text-center text-muted mb-3 font-sans">{clock}</div>
-      <div className="relative bg-card border border-white/10 p-4 rounded-xl mb-4">
-        {ongoing && (
-          <span className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full bg-green-600/80">Ongoing</span>
-        )}
-        <h2 className="text-lg mb-1 line-clamp-3">{ongoing ? ongoing.title : next ? next.title : 'No meetings scheduled for today!'}</h2>
-        <div className="text-sm mb-1 line-clamp-3 text-muted">{ongoing ? ongoing.title : next ? null : 'bka nakakalimutan m lng i-enable ha,,,'}</div>
-        <div className="text-sm text-muted mb-3">
-          {(() => {
-            const s = ongoing ? ongoing.start_time : next ? next.start_time : '';
-            const e = ongoing ? ongoing.end_time : next ? next.end_time : '';
-            return s && e ? `${fmtTime(s)} - ${fmtTime(e)}` : '';
-          })()}
-        </div>
-        <div className="flex gap-2">
-          {primary && (
-            <button className="font-bold text-sm px-3 py-2 rounded-lg bg-text/90 hover:bg-text/60 text-card" onClick={() => onJoin(primary.url)}>Join Meeting</button>
+    <aside className="w-80 border-r border-white/10 p-4 flex flex-col min-h-0">
+      <div className="flex-1 overflow-auto">
+        <div className="text-center text-muted mb-3 font-sans">{clock}</div>
+        <div className="relative bg-card border border-white/10 p-4 rounded-xl mb-4">
+          {ongoing && (
+            <span className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full bg-green-600/80">Ongoing</span>
           )}
+          <h2 className="text-lg mb-1 line-clamp-3">{ongoing ? ongoing.title : next ? next.title : 'No meetings scheduled for today!'}</h2>
+          <div className="text-sm mb-1 line-clamp-3 text-muted">{ongoing ? ongoing.title : next ? null : 'bka nakakalimutan m lng i-enable ha,,,'}</div>
+          <div className="text-sm text-muted mb-3">
+            {(() => {
+              const s = ongoing ? ongoing.start_time : next ? next.start_time : '';
+              const e = ongoing ? ongoing.end_time : next ? next.end_time : '';
+              return s && e ? `${fmtTime(s)} - ${fmtTime(e)}` : '';
+            })()}
+          </div>
+          <div className="flex gap-2">
+            {primary && (
+              <button className="font-bold text-sm px-3 py-2 rounded-lg bg-text/90 hover:bg-text/60 text-card" onClick={() => onJoin(primary.url)}>Join Meeting</button>
+            )}
+          </div>
+        </div>
+        <div>
+          <h3 className="text-md mb-2">Upcoming</h3>
+          {grouped.length === 0 && (
+            <div className="text-sm text-muted px-2">Paparating na... ang ano...? wala,,, </div>
+          )}
+          {grouped.map(g => (
+            <div key={g.key} className="mb-3">
+              <h4 className="text-sm text-muted px-2 mb-1">{g.label}</h4>
+              <ul className="space-y-1">
+                {g.items.map(m => (
+                  <li key={m.id}>
+                    <button className="w-full text-left px-2 py-2 rounded-md hover:bg-white/5" onClick={() => onJoin(m.url)}>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium truncate flex-1">{m.title}</span>
+                        {!m.enabled && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-600/80">DISABLED</span>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted">{fmtTime(m.start_time)} - {fmtTime(m.end_time)}</div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
-      <div>
-        <h3 className="text-md mb-2">Upcoming</h3>
-        {grouped.length === 0 && (
-          <div className="text-sm text-muted px-2">Paparating na... ang ano...? wala,,, </div>
-        )}
-        {grouped.map(g => (
-          <div key={g.key} className="mb-3">
-            <h4 className="text-sm text-muted px-2 mb-1">{g.label}</h4>
-            <ul className="space-y-1">
-              {g.items.map(m => (
-                <li key={m.id}>
-                  <button className="w-full text-left px-2 py-2 rounded-md hover:bg-white/5" onClick={() => onJoin(m.url)}>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium truncate flex-1">{m.title}</span>
-                      {!m.enabled && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-600/80">DISABLED</span>
-                      )}
-                    </div>
-                    <div className="text-sm text-muted">{fmtTime(m.start_time)} - {fmtTime(m.end_time)}</div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+      <footer className="pt-3 mt-3 border-t border-white/10 text-xs text-muted">
+        <div className="flex flex-col gap-1">
+          <div>Made with &lt;3 by zel</div>
+          <a href="mailto:sean@dlsu-lscs.org" className="underline hover:text-white">Report an Issue</a>
+        </div>
+      </footer>
     </aside>
   );
 }
