@@ -2,50 +2,44 @@
   "name": "zeem",
   "version": "0.1.0",
   "description": "Electron app to auto-join/leave Zoom meetings on schedule",
-  "main": "src/main/index.js",
+  "main": "dist/main.js",
   "author": "",
   "license": "MIT",
+
   "scripts": {
-    "build:css": "tailwindcss -c tailwind.config.cjs -i ./src/renderer/src/index.css -o ./dist/renderer/styles.css",
-    "build:js": "esbuild src/renderer/src/main.jsx --bundle --outfile=dist/renderer/bundle.js --format=esm --sourcemap",
-    "build": "npm run build:css && npm run build:js",
-    "start": "npm run build && nodemon --exec electron .",
+    "start": "npm run dev",
     "dev": "npm run build && electron .",
-    "prepare": "",
-    "test": "echo No tests yet",
-    "pack": "electron-builder --dir",
-    "dist": "npm run build && electron-builder --win --x64",
-    "clean": "rimraf dist build release",
-    "build:main": "esbuild src/main/index.js --bundle --minify --platform=node --outfile=dist/main.js",
-    "build:renderer": "vite build",
-    "package": "npm run clean && npm ci --only=production && npm run build:main && npm run build:renderer && electron-builder --win --x64"
+  "build": "rimraf dist && npm run build:css && npm run build:renderer && node scripts/prepareRendererHtml.js && npm run build:preload && npm run build:main",
+    "build:css": "tailwindcss -c tailwind.config.cjs -i ./src/renderer/src/index.css -o ./dist/renderer/styles.css",
+    "build:renderer": "esbuild src/renderer/src/main.jsx --bundle --minify --platform=browser --format=esm --outfile=dist/renderer/bundle.js",
+    "build:preload": "esbuild src/preload/index.js --bundle --minify --platform=node --external:electron --outfile=dist/preload/index.js",
+    "build:main": "esbuild src/main/index.js --bundle --minify --platform=node --external:electron --outfile=dist/main.js",
+    "package": "npm run build && electron-builder --win --x64"
   },
+
   "dependencies": {
-    "nodemon": "^3.1.10",
-    "sql.js": "^1.9.0",
     "electron-is-dev": "^2.0.0",
+    "electron-log": "^5.2.5",
     "electron-updater": "^6.1.8",
-    "electron-log": "^5.2.5"
+    "sql.js": "^1.9.0"
   },
+
   "devDependencies": {
     "autoprefixer": "^10.4.19",
     "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
     "esbuild": "^0.21.5",
     "postcss": "^8.4.38",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwindcss": "^3.4.18",
-    "electron-builder": "^24.13.3"
+    "nodemon": "^3.1.10",
+    "rimraf": "^5.0.5"
   },
+
   "build": {
     "appId": "kim.zel.zeem",
     "productName": "Zeem",
-    "files": [
-      "dist/**",
-      "src/**",
-      "package.json",
-      "node_modules/**"
-    ],
     "asar": true,
     "asarUnpack": [
       "node_modules/sql.js/dist/*.wasm"
@@ -57,8 +51,13 @@
         "filter": ["**/*"]
       }
     ],
+    "files": [
+      "dist/**",
+      "package.json"
+    ],
     "directories": {
-      "buildResources": "build"
+      "buildResources": "build",
+      "output": "release"
     },
     "publish": [
       {
@@ -69,6 +68,7 @@
     ],
     "win": {
       "target": ["nsis"],
+      "icon": "build/icon.ico",
       "artifactName": "${productName}-${version}-Setup.${ext}"
     }
   }

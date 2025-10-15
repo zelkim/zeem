@@ -6,14 +6,17 @@ function createMainWindow() {
     width: 1100,
     height: 720,
     webPreferences: {
-      preload: path.join(__dirname, '..', '..', 'preload', 'index.js'),
+  // In production, __dirname resolves to the dist folder (esbuild bundle)
+  // so we can load the built preload from dist/preload/index.js
+  preload: path.join(__dirname, 'preload', 'index.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
     autoHideMenuBar: true
   });
 
-  win.loadFile(path.join(__dirname, '..', '..', 'renderer', 'index.html'));
+  // Load the built renderer HTML from dist/renderer/index.html
+  win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
   // Remove the menu bar entirely
   try {
     Menu.setApplicationMenu(null);
