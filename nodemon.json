@@ -1,0 +1,4 @@
+{
+  "ext": "jsx,json",
+  "exec": "node your_app.js"
+}

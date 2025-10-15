@@ -7,6 +7,7 @@ class Scheduler {
     this.isZoomRunning = isZoomRunning || (async () => true);
     this.timer = null;
     this.joinedMeetingId = null;
+    this.lastStatus = { ongoing: null, next: null };
     this.refresh();
   }
 
@@ -20,36 +21,62 @@ class Scheduler {
   async tick() {
     const now = new Date();
     const nowIso = now.toISOString();
-    const meetings = this.db.upcomingAndOngoing(nowIso);
-    console.log('[scheduler] tick', { now: nowIso, count: meetings.length });
+    const meetings = this.db.upcomingAndOngoing(nowIso); // returns all enabled meetings with weekday/start_hm
     const threeMinMs = 3 * 60 * 1000;
 
-    // Determine ongoing meeting
+    // Helpers to compute today's and next occurrence times
+    const parseHM = (hm) => {
+      const [h, m] = String(hm).split(':').map(n => parseInt(n, 10));
+      return { h: h || 0, m: m || 0 };
+    };
+    const atDate = (base, { h, m }) => {
+      const d = new Date(base);
+      d.setHours(h, m, 0, 0);
+      return d;
+    };
+    const nextOccurrence = (dow, hm, from = now) => {
+      const { h, m } = parseHM(hm);
+      const d = new Date(from);
+      const delta = (dow - d.getDay() + 7) % 7;
+      d.setDate(d.getDate() + delta);
+      d.setHours(h, m, 0, 0);
+      if (d <= from) d.setDate(d.getDate() + 7);
+      return d;
+    };
+
+    const todayDow = now.getDay();
+
+    // Determine ongoing meeting based on today's weekday and time window
     let ongoing = null;
     for (const m of meetings) {
-      const start = new Date(m.start_time);
-      const end = new Date(m.end_time);
-      if (start <= now && now <= end) { ongoing = m; break; }
+      if (!m.enabled) continue;
+      const { h: sh, m: sm } = parseHM(m.start_hm || '00:00');
+      const { h: eh, m: em } = parseHM(m.end_hm || m.start_hm || '00:00');
+      if (m.weekday === todayDow) {
+        const start = atDate(now, { h: sh, m: sm });
+        const end = atDate(now, { h: eh, m: em });
+        if (start <= now && now <= end) {
+          ongoing = { ...m, start_time: start.toISOString(), end_time: end.toISOString() };
+          break;
+        }
+      }
     }
 
-    // Auto join logic: if not already joined, and there exists a meeting whose start is within 3 min
+    // Auto join logic
     if (!this.joinedMeetingId) {
       for (const m of meetings) {
-        const start = new Date(m.start_time);
+        if (!m.enabled) continue;
+        const start = nextOccurrence(m.weekday, m.start_hm);
         const diff = start - now;
-        if (diff <= threeMinMs && diff >= -60 * 1000) { // join from 3 min before up to 1 min after
-          if (m.enabled) {
-            console.log('[scheduler] joining criteria met', { meetingId: m.id, title: m.title, diffMs: diff });
+        if (diff <= threeMinMs && diff >= -60 * 1000) {
+          try {
             this.notify({ type: 'joining', meetingId: m.id });
-            try {
-              await this.joinFn(m.url);
-              this.joinedMeetingId = m.id;
-              console.log('[scheduler] joined', { meetingId: m.id });
-              this.notify({ type: 'joined', meetingId: m.id });
-            } catch (e) {
-              console.error('[scheduler] join-error', e);
-              this.notify({ type: 'join-error', meetingId: m.id, error: String(e) });
-            }
+            await this.joinFn(m.url);
+            this.joinedMeetingId = m.id;
+            this.notify({ type: 'joined', meetingId: m.id });
+          } catch (e) {
+            console.error('[scheduler] join-error', e);
+            this.notify({ type: 'join-error', meetingId: m.id, error: String(e) });
           }
           break;
         }
@@ -61,7 +88,6 @@ class Scheduler {
       try {
         const running = await this.isZoomRunning();
         if (!running) {
-          console.log('[scheduler] Zoom not running during ongoing meeting; joining now', { meetingId: ongoing.id });
           try {
             await this.joinFn(ongoing.url);
             this.joinedMeetingId = ongoing.id;
@@ -78,31 +104,41 @@ class Scheduler {
 
     // Auto leave logic
     if (this.joinedMeetingId) {
+      // Determine if the meeting we're in is still ongoing today
       const current = meetings.find(m => m.id === this.joinedMeetingId);
       if (!current) {
-        try {
-          console.log('[scheduler] leaving (no longer current)');
-          await this.leaveFn();
-        } catch {}
+        try { await this.leaveFn(); } catch {}
         this.notify({ type: 'left', meetingId: this.joinedMeetingId });
         this.joinedMeetingId = null;
       } else {
-        const end = new Date(current.end_time);
-        if (now >= end) {
-          try {
-            console.log('[scheduler] leaving (reached end time)');
-            await this.leaveFn();
-          } catch {}
+        const { h: eh, m: em } = parseHM(current.end_hm || current.start_hm || '00:00');
+        const end = atDate(now, { h: eh, m: em });
+        if (current.weekday !== todayDow || now >= end) {
+          try { await this.leaveFn(); } catch {}
           this.notify({ type: 'left', meetingId: this.joinedMeetingId });
           this.joinedMeetingId = null;
         }
       }
     }
 
-    // Sidebar status events
-    const next = meetings.find(m => new Date(m.start_time) > now);
+    // Sidebar status events: find next meeting occurrence
+    const upcoming = meetings
+      .filter(m => m.enabled)
+      .map(m => {
+        const s = nextOccurrence(m.weekday, m.start_hm);
+        const e = nextOccurrence(m.weekday, m.end_hm);
+        return { ...m, start_time: s.toISOString(), end_time: e.toISOString() };
+      })
+      .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    const next = upcoming.find(m => new Date(m.start_time) > now) || null;
+    // Update snapshot then emit
+    this.lastStatus = { ongoing: ongoing || null, next: ongoing ? null : next };
     if (ongoing) this.notify({ type: 'status', ongoing, next: null });
     else this.notify({ type: 'status', ongoing: null, next });
+  }
+
+  snapshot() {
+    return this.lastStatus;
   }
 }
 

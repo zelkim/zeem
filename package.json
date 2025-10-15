@@ -6,15 +6,18 @@
   "author": "",
   "license": "MIT",
   "scripts": {
-  "build:css": "tailwindcss -c tailwind.config.cjs -i ./src/renderer/src/index.css -o ./dist/renderer/styles.css",
-  "build:js": "esbuild src/renderer/src/main.jsx --bundle --outfile=dist/renderer/bundle.js --format=esm --sourcemap",
-  "build": "npm run build:css && npm run build:js",
-    "start": "npm run build && electron .",
+    "build:css": "tailwindcss -c tailwind.config.cjs -i ./src/renderer/src/index.css -o ./dist/renderer/styles.css",
+    "build:js": "esbuild src/renderer/src/main.jsx --bundle --outfile=dist/renderer/bundle.js --format=esm --sourcemap",
+    "build": "npm run build:css && npm run build:js",
+    "start": "npm run build && nodemon --exec electron .",
     "dev": "npm run build && electron .",
     "prepare": "",
-    "test": "echo No tests yet"
+    "test": "echo No tests yet",
+    "pack": "electron-builder --dir",
+    "dist": "npm run build && electron-builder --win --x64"
   },
   "dependencies": {
+    "nodemon": "^3.1.10",
     "sql.js": "^1.9.0"
   },
   "devDependencies": {
@@ -24,6 +27,27 @@
     "postcss": "^8.4.38",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwindcss": "^3.4.18"
+    "tailwindcss": "^3.4.18",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.example.zeem",
+    "productName": "Zeem",
+    "files": [
+      "dist/**",
+      "src/**",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/sql.js/dist/*.wasm"
+    ],
+    "directories": {
+      "buildResources": "build"
+    },
+    "win": {
+      "target": ["nsis"],
+      "artifactName": "${productName}-${version}-Setup.${ext}"
+    }
   }
 }

@@ -26,6 +26,9 @@ function registerMeetingsIpc(db, scheduler) {
     scheduler.refresh();
     return { ok: true };
   });
+
+  // Scheduler status snapshot for initial render
+  ipcMain.handle('scheduler:status', async () => scheduler.snapshot());
 }
 
 module.exports = { registerMeetingsIpc };
