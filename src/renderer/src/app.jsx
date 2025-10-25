@@ -137,6 +137,9 @@ export default function App() {
               onEdit={(m) => setEditing(m)}
               onDelete={(id) => setConfirmDelete(id)}
             />
+            <div className="flex flex-col mt-3 gap-1">
+              <div className="text-xs text-center text-muted/30">This application is still in BETA, I will really really appreciate if you report any issues to help make things better :)</div>
+            </div>
           </>
         )}
       </main>

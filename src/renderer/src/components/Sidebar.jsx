@@ -73,6 +73,9 @@ export default function Sidebar({ meetings, ongoing, next, onJoin, onLeave }) {
           {ongoing && (
             <span className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full bg-green-600/80">Ongoing</span>
           )}
+          {next && (
+            <span className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full bg-slate-600/80">Upcoming</span>
+          )}
           <h2 className="text-lg mb-1 line-clamp-3">{ongoing ? ongoing.title : next ? next.title : 'No meetings scheduled for today!'}</h2>
           <div className="text-sm mb-1 line-clamp-3 text-muted">{ongoing ? ongoing.title : next ? null : 'bka nakakalimutan m lng i-enable ha,,,'}</div>
           <div className="text-sm text-muted mb-3">
@@ -118,7 +121,7 @@ export default function Sidebar({ meetings, ongoing, next, onJoin, onLeave }) {
       <footer className="pt-3 mt-3 border-t border-white/10 text-xs text-muted">
         <div className="flex flex-col gap-1">
           <div>Made with &lt;3 by zel</div>
-          <a href="mailto:sean@dlsu-lscs.org" className="underline hover:text-white">Report an Issue</a>
+          <span className="text-muted"><a href="mailto:sean@dlsu-lscs.org" className="underline hover:text-white">Report an Issue</a> to sean@dlsu-lscs.org </span>
         </div>
       </footer>
     </aside>
