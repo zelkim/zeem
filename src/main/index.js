@@ -1,4 +1,5 @@
 const { app, dialog, Tray, Menu, nativeImage } = require('electron');
+const fs = require('fs');
 const path = require('path');
 const { Database } = require('./services/db');
 const { Scheduler } = require('./services/scheduler');
@@ -94,20 +95,38 @@ app.on('activate', () => {
 });
 
 // ---- Tray helpers ----
-function getIconPath() {
-  // Prefer packaged resource; fallback to project build/icon.ico in dev
+function loadTrayImage() {
+  // Try a set of candidates, return the first non-empty image
+  const candidates = [];
   if (app.isPackaged) {
-    return path.join(process.resourcesPath, 'icons', 'icon.ico');
+    candidates.push(
+      path.join(process.resourcesPath, 'icons', 'icon.ico'),
+      path.join(process.resourcesPath, 'icon.ico'),
+      path.join(process.resourcesPath, 'icons', 'icon.png'),
+      path.join(process.resourcesPath, 'icon.png')
+    );
+  } else {
+    const root = app.getAppPath();
+    candidates.push(
+      path.join(root, 'icon.ico'),
+      path.join(root, 'icon.png'),
+      path.join(root, 'build', 'icon.ico'),
+      path.join(root, 'build', 'icon.png')
+    );
   }
-  // __dirname at runtime is dist/ in dev; go up to project root
-  return path.join(app.getAppPath(), 'build', 'icon.ico');
+  for (const p of candidates) {
+    try {
+      const img = nativeImage.createFromPath(p);
+      if (img && !img.isEmpty()) return img;
+    } catch {}
+  }
+  return null;
 }
 
 function createTray() {
   try {
-    const iconPath = getIconPath();
-    const image = nativeImage.createFromPath(iconPath);
-    tray = new Tray(image && !image.isEmpty() ? image : undefined);
+    const image = loadTrayImage();
+    tray = new Tray(image || nativeImage.createEmpty());
   } catch {
     // As a fallback, try without icon (may show default)
     tray = new Tray(nativeImage.createEmpty());

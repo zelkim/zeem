@@ -51,9 +51,9 @@
         "filter": ["**/*"]
       },
       {
-        "from": "build",
+        "from": ".",
         "to": "icons",
-        "filter": ["icon.ico"]
+        "filter": ["icon.ico", "icon.png"]
       }
     ],
     "files": [
