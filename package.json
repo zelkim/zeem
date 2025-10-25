@@ -49,6 +49,11 @@
         "from": "node_modules/sql.js/dist/",
         "to": "node_modules/sql.js/dist/",
         "filter": ["**/*"]
+      },
+      {
+        "from": "build",
+        "to": "icons",
+        "filter": ["icon.ico"]
       }
     ],
     "files": [
