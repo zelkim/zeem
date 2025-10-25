@@ -116,8 +116,20 @@ export default function App() {
           </div>
         ) : (
           <>
-            <div className="flex justify-start mb-3">
+            <div className="flex justify-start items-center gap-2 mb-3">
               <button className="px-3 py-2 rounded-lg bg-card/90 hover:bg-card/60 text-text" onClick={() => setEditing({})}>+ Add Meeting</button>
+              <button
+                className="px-2 py-2 rounded-lg bg-card/90 hover:bg-card/60 text-text"
+                onClick={reload}
+                aria-label="Reload meetings"
+                title="Reload"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                  <polyline points="23 4 23 10 17 10" />
+                  <polyline points="1 20 1 14 7 14" />
+                  <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
+              </button>
             </div>
             <MeetingsList
               meetings={meetings}
