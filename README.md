@@ -8,7 +8,7 @@ Zeem automatically joins and leaves your Zoom meetings on a weekly schedule. Set
 ## Quick start (for everyone)
 
 ### 1) Install
-- Run the installer you downloaded (Zeem-0.1.0-Setup.exe) and follow the prompts.
+- Run the installer you downloaded (Zeem-0.1.1-Setup.exe) and follow the prompts.
 
 ### 2) Add your meetings
 - Click “+ Add Meeting”
