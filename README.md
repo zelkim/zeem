@@ -5,6 +5,11 @@
 
 Zeem automatically joins and leaves your Zoom meetings on a weekly schedule. Set it once—no more rushing to links.
 
+> [!NOTE]
+> Currently only available on Windows. Support for Linux and MacOS systems will come next release.
+>
+> <sub>if you want to work on cross-system support, you are welcome to create a pull request!</sub>
+
 ## Quick start (for everyone)
 
 ### 1) Install
